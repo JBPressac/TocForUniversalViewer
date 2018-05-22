@@ -34,9 +34,18 @@ class TocForUniversalViewerPlugin extends Omeka_Plugin_AbstractPlugin
       // echo '<p>' + $manifest + '</p>';
       // $structures = '"structures":[{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-0","@type":"sc:Range","label":"Front Cover","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c0"]},{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-2","@type":"sc:Range","label":"Title Page","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c3"]},{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-1","@type":"sc:Range","label":"Back Cover","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c1"]}]'
       $manifest['label'] = "Label bleu" ;
-      $manifest['structures'] = array(array('@id' => "https://wellcomelibrary.org/iiif/b18035723/range/r-0",
-      '@type' => "sc:Range", 'label' => "Front Cover", 'canvases' => "https://wellcomelibrary.org/iiif/b18035723/canvas/c0"),
-      array('@id' => "https://wellcomelibrary.org/iiif/b18035723/range/r-1"));
+      $manifest['structures'] = array(
+        array('@id' => "http://localhost/omeka26/iiif/3/range/r0",
+              '@type' => "sc:Range",
+              'label' => "Page 01",
+              'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p1")
+            ),
+        array('@id' => "http://localhost/omeka26/iiif/3/range/r1",
+              '@type' => "sc:Range",
+              'label' => "Page 10",
+              'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p10")
+            )
+    );
 
       // $manifest = $manifest;
       return $manifest ;
