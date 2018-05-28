@@ -8,46 +8,107 @@
  *  */
 
 /**
- * The Table of content for UniversalViewer plugin.
+ * A Table of content for the UniversalViewer plugin.
  * @package Omeka\Plugins\TocForUniversalViewer
  */
 class TocForUniversalViewerPlugin extends Omeka_Plugin_AbstractPlugin
 {
-    protected $_hooks = array(
-      'public_items_show',
-    );
-
     protected $_filters = array(
       'uv_manifest',
     );
 
-    /**
-     * Print out Hello on item show
-     */
-    public function hookPublicItemsShow()
-    {
-           echo '<h1>Hello World</h1>';
-    }
+    const ELEMENT_SET_NAME = 'PDF Table of Contents';
+    const ELEMENT_NAME = 'Text';
+
+    protected $_pdfMimeTypes = array(
+        'application/pdf',
+        'application/x-pdf',
+        'application/acrobat',
+        'text/x-pdf',
+        'text/pdf',
+        'applications/vnd.pdf',
+    );
 
     public function filterUvManifest($manifest, $args)
     {
-      // echo '<p>' + $manifest + '</p>';
-      // $structures = '"structures":[{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-0","@type":"sc:Range","label":"Front Cover","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c0"]},{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-2","@type":"sc:Range","label":"Title Page","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c3"]},{"@id":"https://wellcomelibrary.org/iiif/b18035723/range/r-1","@type":"sc:Range","label":"Back Cover","canvases":["https://wellcomelibrary.org/iiif/b18035723/canvas/c1"]}]'
-      $manifest['label'] = "Label bleu" ;
-      $manifest['structures'] = array(
-        array('@id' => "http://localhost/omeka26/iiif/3/range/r0",
-              '@type' => "sc:Range",
-              'label' => "Page 01",
-              'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p1")
-            ),
-        array('@id' => "http://localhost/omeka26/iiif/3/range/r1",
-              '@type' => "sc:Range",
-              'label' => "Page 10",
-              'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p10")
-            )
-    );
+      // Fonction executée à la consultation des pages des manifestes, per ex.
+      // http://localhost/omeka26/iiif/4/manifest
 
-      // $manifest = $manifest;
+      // Trouvé les paramètres de ce filtre en cherchant apply_filters dans
+      // le plugin UniversalViewer et en consultant la documentation
+      // de apply_filters.
+      $item = $args['record'];
+      $files = $item->getFiles();
+
+      // Il est possible de modifier le titre du document dans la visionneuse
+      // comme suit.
+      // $manifest['label'] = "Label bleu" ;
+
+      // Ce qui suit est inspiré de https://tinyurl.com/ya8osg94
+
+      foreach ($files as $file) {
+        if (in_array($file->mime_type, $this->_pdfMimeTypes)) {
+          $textElement = $file->getElementTexts(
+            self::ELEMENT_SET_NAME,
+            self::ELEMENT_NAME
+          );
+          $toc = $textElement[0];
+
+          if (!preg_match("/InfoValue/", $toc))
+          {
+            /* On est dans le cas où la métadonnée Text du jeux de métadonnées
+            PDF Table of Contents peut ressembler à :
+
+            1|Soun Fantik|3
+            1|Kola|5
+            1|Eun eureud|7
+            1|Ar c'haor|9
+            1|Izabel|11
+
+            */
+
+            $sortie = "";
+            $toc = rtrim($toc);
+
+            $tab_toc = preg_split("/\n/", $toc);
+            $niveau_pdt = "";
+            $total = (count($tab_toc)-1);
+            for ($i = 0; $i <= $total; $i++)
+            {
+              $tab_ligne = preg_split("/\|/", $tab_toc[$i]);
+              $niveau = $tab_ligne[0];
+              $titre  = $tab_ligne[1];
+              $page   = $tab_ligne[2];
+
+              $range = $i + 1;
+
+              $manifest['structures'][] =
+                array('@id' => absolute_url("iiif/" . $item->id . "/range/r" . $range),
+                  '@type' => "sc:Range",
+                  'label' => $titre,
+                  'canvases' => array(absolute_url("iiif/" . $item->id . "/canvas/p" . $page))
+                  );
+            }
+          }
+
+          /*
+          $manifest['structures'][] =
+            array('@id' => "http://localhost/omeka26/iiif/3/range/r0",
+                  '@type' => "sc:Range",
+                  'label' => "Page 01",
+                  'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p1")
+                );
+          $manifest['structures'][] =
+            array('@id' => "http://localhost/omeka26/iiif/3/range/r1",
+                  '@type' => "sc:Range",
+                  'label' => "Page 10",
+                  'canvases' => array("http://localhost/omeka26/iiif/3/canvas/p10")
+
+              );
+          */
+        }
+      }
+
       return $manifest ;
     }
 }
